@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  ordersapi
+
+  Sample SAM Template for ordersapi
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 512
+    Environment:
+      Variables:
+        ORDERS_TABLE: !Ref OrdersTable
+
+    Tracing: Active
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+    LoggingConfig:
+      LogFormat: JSON
+  Api:
+    TracingEnabled: true
+Resources:
+  OrdersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: id
+        Type: String
+  CreateOrderFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: ordersapi
+      Handler: ordersapi.CreateOrderLambda::createOrder
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+      Runtime: java21
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Timeout: 20
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: POST
+  ReadOrdersFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: ordersapi
+      Handler: ordersapi.ReadOrdersLambda::readOrders
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+      Runtime: java21
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Timeout: 20
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: GET
+  ReadOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ordersapi
+      Handler: ordersapi.ReadOrderLambda::readOrder
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+      Runtime: java21
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Timeout: 20
+      Events:
+        OrderEvents:
+          Type: Api
+          Properties:
+            Path: /orders/{id}
+            Method: GET
+
